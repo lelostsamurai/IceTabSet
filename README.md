@@ -1,4 +1,4 @@
-IceTabSet v1.2.0
+IceTabSet v1.2.1
   Developed by Norbert Mereg (mereg.norbert@gmail.com)
     (Thanks for Stefan Ascher (TMDTabSet))
 
@@ -23,6 +23,9 @@ IceTabSet v1.2.0
 
   History:
   
+    v1.2.1  2011.10.10:
+      - modified new tab button
+      
     v1.2.0  2011.07.08:
       - reworked scroller class
       - no flickering, Double buffered paint method
