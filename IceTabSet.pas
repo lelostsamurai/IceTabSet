@@ -1,5 +1,5 @@
 {
-  IceTabSet v1.2.0
+  IceTabSet v1.2.1
   Developed by Norbert Mereg (mereg.norbert@gmail.com)
     (Thanks for Stefan Ascher (TMDTabSet))
 
@@ -23,6 +23,8 @@
 
 
   History:
+    v1.2.1  2011.10.10:
+      - modified new tab button
     v1.2.0  2011.07.08:
       - reworked scroller class
       - no flickering, Double buffered paint method
@@ -100,58 +102,6 @@ type
 
   TScrollButtonClickEvent = procedure(Sender: TObject; const AButton: TScrollButton) of object;
 
-(*  TIceTabScroller = class(TCustomControl)
-  private
-    fOnClick: TScrollButtonClickEvent;
-    fCurrent: TScrollButton;
-    fDown: boolean;
-    fPressed: boolean;
-    fWidth: integer;
-    fHeight: integer;
-    fPosition: integer;
-    fMin: integer;
-    fMax: integer;
-    fChange: integer;
-    fDownColor: TColor;
-    fDownBorder: TColor;
-    FArrowColor: TColor;
-    function CanScrollLeft: Boolean;
-    function CanScrollRight: Boolean;
-    procedure DoMouseDown(const X: Integer);
-    procedure SetMin(Value: Integer);
-    procedure SetMax(Value: Integer);
-    procedure SetPosition(Value: Integer);
-    procedure SetDownColor(Value: TColor);
-    procedure SetDownBorder(Value: TColor);
-    procedure WMLButtonDown(var Message: TWMLButtonDown); message WM_LBUTTONDOWN;
-    procedure WMLButtonDblClk(var Message: TWMLButtonDblClk); message WM_LBUTTONDBLCLK;
-    procedure WMMouseMove(var Message: TWMMouseMove); message WM_MOUSEMOVE;
-    procedure WMLButtonUp(var Message: TWMLButtonUp); message WM_LBUTTONUP;
-    procedure WMSize(var Message: TWMSize); message WM_SIZE;
-    procedure DrawRightArrow(Canvas: TCanvas; X, Y: integer;
-      Button: TScrollButton; State: boolean);
-    procedure DrawLeftArrow(Canvas: TCanvas; X, Y: integer;
-      Button: TScrollButton; State: boolean);
-    procedure SetArrowColor(const Value: TColor);
-  protected
-    procedure Paint; override;
-    procedure DoOnClick(const AButton: TScrollButton); dynamic;
-  public
-
-    constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
-  published
-    property DownColor: TColor read fDownColor write SetDownColor default DEF_DOWNCOLOR;
-    property DownBorder: TColor read fDownBorder write SetDownBorder default DEF_DOWNBORDER;
-    property ArrowColor: TColor read FArrowColor write SetArrowColor;
-
-    property Min: Longint read fMin write SetMin default 0;
-    property Max: Longint read fMax write SetMax default 0;
-    property Position: Longint read fPosition write SetPosition default 0;
-    property Change: Integer read fChange write fChange default 1;
-    property OnClick: TScrollButtonClickEvent read fOnClick write fOnClick;
-  end;
-*)
   TBeforeShowPopupMenuEvent = procedure(Sender: TObject; ATab: TIceTab; MousePos: TPoint) of object;
 
   TTabSelectedEvent = procedure(Sender: TObject; ATab: TIceTab; ASelected: boolean) of object;
@@ -381,7 +331,7 @@ const
 
 procedure Register;
 begin
-  RegisterComponents('IcePackage', [TIceTabSet]);
+  RegisterComponents('SmartTabs', [TIceTabSet]);
 end;
 
 function MakeGDIPColor(C: TColor): Cardinal;
@@ -394,244 +344,6 @@ begin
              (DWORD(GetRValue(tmpRGB)) shl   RedShift) or
              (DWORD(255) shl AlphaShift));
 end;
-
-{ TIceTabScroller }
-(*
-constructor TIceTabScroller.Create(AOwner: TComponent);
-begin
-  inherited;
-  ControlStyle := ControlStyle + [csOpaque];
-  fWidth := BTN_SIZE * 2 + 1;
-  fHeight := BTN_SIZE;
-  fMin := 0;
-  fMax := 0;
-  fPosition := 0;
-  fChange := 1;
-  fArrowColor := clBlack;
-  fDownColor := DEF_DOWNCOLOR;
-  fDownBorder := DEF_DOWNBORDER;
-end;
-
-destructor TIceTabScroller.Destroy;
-begin
-  inherited;
-end;
-
-procedure TIceTabScroller.Paint;
-const
-  DWN: array[Boolean] of Integer = (0, 4);
-
-var
-  ParRect: TRect;
-  P: TPoint;
-  bmp: TBitmap;
-begin
-  if (Parent <> nil) and Parent.HandleAllocated then
-    InvalidateRect(Parent.Handle, @Rect, True);
-
-  with Canvas do
-  begin
-    // Draw parent background
-    P := ClientToParent(ClientRect.TopLeft);
-    ParRect := Rect(P, Point(P.X + ClientRect.Right - ClientRect.Left, P.Y + ClientRect.Bottom - ClientRect.Top));
-    Canvas.CopyRect(ClientRect, TIceTabSet(Parent).Canvas, ParRect);
-
-    // Left
-    if (fCurrent = sbLeft) and fDown then
-    begin
-      Brush.Color := fDownColor;
-      Canvas.Rectangle(0, 0, BTN_SIZE, BTN_SIZE);
-    end;
-    if CanScrollLeft then
-      DrawLeftArrow(Canvas, BTN_MARGIN, BTN_MARGIN, sbLeft, CanScrollLeft);
-
-    // Right
-    if (fCurrent = sbRight) and fDown then
-    begin
-      Brush.Color := fDownColor;
-      Canvas.Rectangle(BTN_SIZE, 0, BTN_SIZE * 2, BTN_SIZE);
-    end;
-    if CanScrollRight then
-      DrawRightArrow(Canvas, BTN_SIZE + BTN_MARGIN, BTN_MARGIN, sbRight, CanScrollRight);
-  end;
-end;
-
-procedure TIceTabScroller.DrawRightArrow(Canvas: TCanvas; X, Y: integer; Button: TScrollButton; State: boolean);
-var
-  graphics: TGPGraphics;
-  path: TGPGraphicsPath;
-  brush: TGPSolidBrush;
-  innerRect: TRect;
-begin
-  graphics := TGPGraphics.Create(Canvas.Handle);
-  graphics.SetSmoothingMode(SmoothingModeAntiAlias);
-
-  path := TGPGraphicsPath.Create();
-  innerRect := Rect(X + 2, Y + 2, X + 2 + 6, Y + 2 + 8);
-  path.AddLine(innerRect.Left, innerRect.Top, InnerRect.Right, InnerRect.Top + 4);
-  path.AddLine(innerRect.Right, innerRect.Top + 4, InnerRect.Left, InnerRect.Bottom);
-  path.AddLine(innerRect.Left, innerRect.Bottom, InnerRect.Left, InnerRect.Top);
-
-  brush:= TGPSolidBrush.Create(MakeGDIPColor(clBlack));
-  graphics.FillPath(brush, path);
-
-  brush.Free;
-  path.Free;
-  graphics.Free;
-end;
-
-procedure TIceTabScroller.DrawLeftArrow(Canvas: TCanvas; X, Y: integer; Button: TScrollButton; State: boolean);
-var
-  graphics: TGPGraphics;
-  path: TGPGraphicsPath;
-  brush: TGPSolidBrush;
-  innerRect: TRect;
-begin
-  graphics := TGPGraphics.Create(Canvas.Handle);
-  graphics.SetSmoothingMode(SmoothingModeAntiAlias);
-
-  path := TGPGraphicsPath.Create();
-  innerRect := Rect(X + 3, Y + 2, X + 3 + 6, Y + 2 + 8);
-  path.AddLine(innerRect.Right, innerRect.Top, InnerRect.Left, InnerRect.Top + 4);
-  path.AddLine(innerRect.Left, innerRect.Top + 4, InnerRect.Right, InnerRect.Bottom);
-  path.AddLine(innerRect.Right, innerRect.Bottom, InnerRect.Right, InnerRect.Top);
-
-  brush:= TGPSolidBrush.Create(MakeGDIPColor(fArrowColor));
-  graphics.FillPath(brush, path);
-
-  brush.Free;
-  path.Free;
-  graphics.Free;
-end;
-
-
-procedure TIceTabScroller.DoOnClick(const AButton: TScrollButton);
-begin
-  if Assigned(fOnClick) then
-    fOnClick(Self, AButton);
-end;
-
-function TIceTabScroller.CanScrollLeft: Boolean;
-begin
-  Result := fPosition > fMin;
-end;
-
-function TIceTabScroller.CanScrollRight: Boolean;
-begin
-  Result := fPosition < fMax;
-end;
-
-procedure TIceTabScroller.DoMouseDown(const X: Integer);
-begin
-  fCurrent := TScrollButton(X div BTN_SIZE);
-  case fCurrent of
-    sbLeft: if not CanScrollLeft then Exit;
-    sbRight: if not CanScrollRight then Exit;
-  end;
-  fPressed := True;
-  fDown := True;
-  Invalidate;
-  SetCapture(Handle);
-end;
-
-procedure TIceTabScroller.WMLButtonDown(var Message: TWMLButtonDown);
-begin
-  DoMouseDown(Message.XPos);
-end;
-
-procedure TIceTabScroller.WMLButtonDblClk(var Message: TWMLButtonDblClk);
-begin
-  DoMouseDown(Message.XPos);
-end;
-
-procedure TIceTabScroller.WMMouseMove(var Message: TWMMouseMove);
-var
-  P: TPoint;
-  R: TRect;
-begin
-  if fPressed then begin
-    P := Point(Message.XPos, Message.YPos);
-    R := Rect(0, 0, BTN_SIZE * Ord(fCurrent), fHeight);
-    if PtInRect(R, P) <> fDown then begin
-      fDown := not fDown;
-      Invalidate;
-    end;
-  end;
-end;
-
-procedure TIceTabScroller.WMLButtonUp(var Message: TWMLButtonUp);
-var
-  NewPos: Longint;
-begin
-  ReleaseCapture;
-  fPressed := False;
-
-  if fDown then begin
-    fDown := False;
-    NewPos := Position;
-    case fCurrent of
-      sbLeft: Dec(NewPos, fChange);
-      sbRight: Inc(NewPos, fChange);
-    end;
-    Position := NewPos;
-    DoOnClick(fCurrent);
-  end;
-end;
-
-procedure TIceTabScroller.WMSize(var Message: TWMSize);
-begin
-  inherited;
-  Width := fWidth - 1;
-  Height := fHeight;
-end;
-
-procedure TIceTabScroller.SetMin(Value: Integer);
-begin
-  if Value < fMax then
-    fMin := Value;
-end;
-
-procedure TIceTabScroller.SetMax(Value: Integer);
-begin
-  if Value >= fMin then
-    fMax := Value;
-end;
-
-procedure TIceTabScroller.SetPosition(Value: Integer);
-begin
-  if Value <> fPosition then begin
-    if Value < Min then
-      Value := Min;
-    if Value > Max then
-      Value := Max;
-    fPosition := Value;
-  end;
-  Invalidate;
-end;
-
-procedure TIceTabScroller.SetDownColor(Value: TColor);
-begin
-  if fDownColor <> Value then begin
-    fDownColor := Value;
-    Invalidate;
-  end;
-end;
-
-procedure TIceTabScroller.SetArrowColor(const Value: TColor);
-begin
-  if FArrowColor <> Value then begin
-    FArrowColor := Value;
-    Invalidate;
-  end;
-end;
-
-procedure TIceTabScroller.SetDownBorder(Value: TColor);
-begin
-  if fDownBorder <> Value then begin
-    fDownBorder := Value;
-    Invalidate;
-  end;
-end;   *)
 
 { TIceTab }
 
@@ -1134,6 +846,7 @@ var
   signW, I: integer;
   plusSign: array [0..12] of TGPPointF;
   fillColor1, fillColor2, plusColor: Cardinal;
+  NBPath: array[0..8] of TGPPointF;
 begin
   graphics := TGPGraphics.Create(Canvas.Handle);
   graphics.SetSmoothingMode(SmoothingModeAntiAlias);
@@ -1164,15 +877,37 @@ begin
     if (fTabs[i].fStartPos + fTabs[i].fSize) > X1 then
       X1 := fTabs[i].fStartPos + fTabs[i].fSize;
 
+  x2 := x1 + 20;
+  y1 := ClientHeight - TabHeight + ((TabHeight - 15) div 2);
+  y2 := y1 + 15;
   //X1 := LastPos - fEdgeWidth;
-  Y1 := ClientHeight - TabHeight + 3;
+  {Y1 := ClientHeight - TabHeight + 3;
   X2 := X1 + FixLine + fEdgeWidth div 2 + 5;
-  Y2 := Y1 + TabHeight - 8;
+  Y2 := Y1 + TabHeight - 8;}
 
   FNewButtonArea := Rect(X1, Y1, X2, Y2);
 
   path := TGPGraphicsPath.Create();
-  path.AddEllipse(MakeRect(X1, (ClientHeight - 18) / 2, 18, 18));
+
+  NBPath[0].x := x1 + 3;
+  NBPath[0].y := y2;
+  NBPath[1].x := x1;
+  NBPath[1].y := y2 - 2;
+  NBPath[2].x := x1 - 4;
+  NBPath[2].y := y1 + 2;
+  NBPath[3].x := x1 - 3;
+  NBPath[3].y := y1;
+  NBPath[4].x := x2 - 7;
+  NBPath[4].y := y1;
+  NBPath[5].x := x2 - 4;
+  NBPath[5].y := y1 + 2;
+  NBPath[6].x := x2;
+  NBPath[6].y := y2 - 2;
+  NBPath[7].x := x2;
+  NBPath[7].y := y2;
+
+  path.AddPolygon(PGPPointF(@NBPath), 8);
+
 {  path.AddLine(X1, Y1, X1 + FixLine, Y1);
   path.AddBezier(
     X1 + FixLine, Y1, X2 - 2, Y1 + 1,
@@ -1195,10 +930,8 @@ begin
 
   //Draw + sign
   signW := 3;
-  dX := 9 - signW * 1.5;
-  dY := ((ClientHeight - 18) / 2) - signW * 1.5;
-//  dX := (X2 - X1)/2 - signW * 1.5;
-//  dY := (Y2 - Y1)/2 - signW * 1.5;
+  dX := 8 - signW * 1.5;
+  dY := signW;
 
   plusSign[0] := MakePoint(X1 + dx, Y1 + dY + signW);
   plusSign[1] := MakePoint(X1 + dx + signW, Y1 + dY + signW);
